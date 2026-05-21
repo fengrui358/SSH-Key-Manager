@@ -47,15 +47,7 @@ jobs:
 
       - name: Build with PyInstaller (Windows)
         if: matrix.target == 'windows'
-        run: |
-          uv run pyinstaller --onefile --windowed \
-            --name ssh-key-manager.exe \
-            --icon assets/icon.ico \
-            --add-data "assets/icon.png:assets" \
-            --hidden-import=paramiko \
-            --hidden-import=nacl \
-            --hidden-import=cryptography \
-            src/ssh_key_manager/__main__.py
+        run: uv run pyinstaller --onefile --windowed --name ssh-key-manager.exe --icon assets/icon.ico --add-data "assets/icon.png;assets" --hidden-import=paramiko --hidden-import=nacl --hidden-import=cryptography src/ssh_key_manager/__main__.py
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
