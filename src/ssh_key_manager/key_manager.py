@@ -146,19 +146,21 @@ def is_key_expired(key: dict) -> bool:
         return False
 
 
-def format_remaining_time(expires_at: str) -> str:
+def format_remaining_time(expires_at: str, lang: str = "en") -> str:
     """Format remaining time until expiry."""
     try:
+        from . import i18n
+
         exp_dt = datetime.fromisoformat(expires_at)
         if exp_dt.tzinfo is None:
             exp_dt = exp_dt.replace(tzinfo=timezone.utc)
         delta = exp_dt - datetime.now(timezone.utc)
         if delta.total_seconds() <= 0:
-            return "Expired"
+            return i18n.t("keys.status_expired")
         hours = int(delta.total_seconds() // 3600)
         minutes = int((delta.total_seconds() % 3600) // 60)
         if hours > 0:
-            return f"{hours}h {minutes}m remaining"
-        return f"{minutes}m remaining"
+            return i18n.t("keys.remaining", h=hours, m=minutes)
+        return i18n.t("keys.remaining_min", m=minutes)
     except (ValueError, TypeError):
         return "Unknown"

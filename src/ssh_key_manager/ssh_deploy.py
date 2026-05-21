@@ -7,6 +7,36 @@ from pathlib import Path
 import paramiko
 
 
+def _connect(
+    host: str,
+    username: str,
+    port: int,
+    password: str | None = None,
+    key_path: str | None = None,
+    key_passphrase: str | None = None,
+) -> paramiko.SSHClient:
+    """Create and return a connected SSH client."""
+    client = paramiko.SSHClient()
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+    connect_kwargs: dict = {
+        "hostname": host,
+        "port": port,
+        "username": username,
+        "timeout": 15,
+    }
+
+    if key_path:
+        connect_kwargs["key_filename"] = key_path
+        if key_passphrase:
+            connect_kwargs["passphrase"] = key_passphrase
+    elif password:
+        connect_kwargs["password"] = password
+
+    client.connect(**connect_kwargs)
+    return client
+
+
 def deploy_public_key(
     host: str,
     username: str,
@@ -14,24 +44,18 @@ def deploy_public_key(
     public_key_content: str | None = None,
     public_key_path: str | None = None,
     password: str | None = None,
+    key_path: str | None = None,
+    key_passphrase: str | None = None,
 ) -> str:
-    """Deploy or remove a public key on a remote server's authorized_keys.
-
-    If public_key_content is provided, adds the key.
-    If remove_key path is provided, removes matching keys.
-    Returns a status message.
-    """
+    """Deploy a public key on a remote server's authorized_keys."""
     if public_key_content is None and public_key_path:
         public_key_content = Path(public_key_path).read_text(encoding="utf-8").strip()
 
     if not public_key_content:
         raise ValueError("No public key content provided")
 
-    client = paramiko.SSHClient()
-    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-
+    client = _connect(host, username, port, password, key_path, key_passphrase)
     try:
-        client.connect(hostname=host, port=port, username=username, password=password, timeout=15)
         _add_to_authorized_keys(client, public_key_content)
         return "Public key deployed successfully"
     finally:
@@ -44,33 +68,35 @@ def remove_public_key(
     port: int,
     public_key_path: str,
     password: str | None = None,
+    key_path: str | None = None,
+    key_passphrase: str | None = None,
 ) -> str:
     """Remove a public key from a remote server's authorized_keys."""
     pub_content = Path(public_key_path).read_text(encoding="utf-8").strip()
 
-    client = paramiko.SSHClient()
-    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-
+    client = _connect(host, username, port, password, key_path, key_passphrase)
     try:
-        client.connect(hostname=host, port=port, username=username, password=password, timeout=15)
         _remove_from_authorized_keys(client, pub_content)
         return "Public key removed from server"
     finally:
         client.close()
 
 
-def test_connection(host: str, username: str, port: int, password: str | None = None) -> tuple[bool, str]:
+def test_connection(
+    host: str,
+    username: str,
+    port: int,
+    password: str | None = None,
+    key_path: str | None = None,
+    key_passphrase: str | None = None,
+) -> tuple[bool, str]:
     """Test SSH connection to a server."""
-    client = paramiko.SSHClient()
-    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-
     try:
-        client.connect(hostname=host, port=port, username=username, password=password, timeout=10)
+        client = _connect(host, username, port, password, key_path, key_passphrase)
+        client.close()
         return True, "Connection successful"
     except Exception as e:
         return False, str(e)
-    finally:
-        client.close()
 
 
 def _add_to_authorized_keys(client: paramiko.SSHClient, pub_key: str) -> None:

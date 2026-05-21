@@ -29,6 +29,8 @@ def _init_schema(conn: sqlite3.Connection) -> None:
             host TEXT NOT NULL,
             port INTEGER NOT NULL DEFAULT 22,
             username TEXT NOT NULL,
+            auth_type TEXT NOT NULL DEFAULT 'password',
+            stored_key_path TEXT,
             created_at TEXT NOT NULL
         );
 
@@ -50,11 +52,19 @@ def _init_schema(conn: sqlite3.Connection) -> None:
 # --- Server operations ---
 
 
-def add_server(conn: sqlite3.Connection, name: str, host: str, port: int, username: str) -> int:
+def add_server(
+    conn: sqlite3.Connection,
+    name: str,
+    host: str,
+    port: int,
+    username: str,
+    auth_type: str = "password",
+    stored_key_path: str | None = None,
+) -> int:
     now = _now_iso()
     cur = conn.execute(
-        "INSERT INTO servers (name, host, port, username, created_at) VALUES (?, ?, ?, ?, ?)",
-        (name, host, port, username, now),
+        "INSERT INTO servers (name, host, port, username, auth_type, stored_key_path, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (name, host, port, username, auth_type, stored_key_path, now),
     )
     conn.commit()
     return cur.lastrowid  # type: ignore[return-value]
