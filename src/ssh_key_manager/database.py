@@ -193,3 +193,36 @@ def get_expired_keys(conn: sqlite3.Connection) -> list[dict]:
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def store_key_path(data_dir: Path, absolute_path: Path) -> str:
+    """Convert an absolute key file path to a data-dir-relative path for DB storage.
+
+    This makes key paths portable when the data directory is synced across
+    machines with different absolute paths.
+    """
+    return str(absolute_path.resolve().relative_to(data_dir.resolve()))
+
+
+def resolve_key_path(data_dir: Path, stored_path: str | None) -> Path | None:
+    """Resolve a stored key path to an absolute path.
+
+    Handles both relative paths (current format) and absolute paths
+    (legacy format from older versions or synced databases). If an
+    absolute path doesn't exist, falls back to looking in the data
+    directory's keys/servers folder.
+    """
+    if not stored_path:
+        return None
+    p = Path(stored_path)
+    if p.is_absolute():
+        if p.exists():
+            return p
+        # Legacy absolute path from a different machine — try to find
+        # the file by its name in the data directory
+        fallback = data_dir / "keys" / "servers" / p.name
+        if fallback.exists():
+            return fallback
+        # Return the path as-is; caller should handle missing files
+        return p
+    return (data_dir / p).resolve()

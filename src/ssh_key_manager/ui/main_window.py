@@ -517,9 +517,11 @@ class App(tk.Tk):
 
     def _get_server_auth(self, server: dict) -> dict:
         """Build SSH auth kwargs from server config."""
-        if server.get("auth_type") == "key" and server.get("stored_key_path"):
+        stored = server.get("stored_key_path")
+        if server.get("auth_type") == "key" and stored:
+            resolved = database.resolve_key_path(self._data_dir, stored)
             return {
-                "key_path": server["stored_key_path"],
+                "key_path": str(resolved) if resolved else stored,
                 "key_passphrase": self._srv_key_pass_var.get() or None,
             }
         return {
@@ -744,17 +746,17 @@ class App(tk.Tk):
             set_private_dir(srv_keys_dir)
             set_private_file(dest_path)
 
-            stored_key_path = str(dest_path)
+            stored_key_path = database.store_key_path(self._data_dir, dest_path)
 
         if self._editing_server_id:
             # Update existing server
             old_server = database.get_server(self._conn, self._editing_server_id)
             # Remove old stored key if switching away from key auth or key changed
             if old_server and old_server.get("stored_key_path"):
-                if auth_type != "key" or stored_key_path != old_server["stored_key_path"]:
-                    old_p = Path(old_server["stored_key_path"])
-                    if old_p.exists():
-                        old_p.unlink()
+                old_resolved = database.resolve_key_path(self._data_dir, old_server["stored_key_path"])
+                if old_resolved and (auth_type != "key" or stored_key_path != old_server["stored_key_path"]):
+                    if old_resolved.exists():
+                        old_resolved.unlink()
             # Keep existing key if auth type unchanged and no new key selected
             if auth_type == "key" and not stored_key_path and old_server and old_server.get("stored_key_path"):
                 stored_key_path = old_server["stored_key_path"]
@@ -785,7 +787,8 @@ class App(tk.Tk):
         self._on_auth_type_change()
 
         if server.get("auth_type") == "key" and server.get("stored_key_path"):
-            self._srv_key_path_var.set(server["stored_key_path"])
+            resolved = database.resolve_key_path(self._data_dir, server["stored_key_path"])
+            self._srv_key_path_var.set(str(resolved) if resolved else server["stored_key_path"])
         else:
             self._srv_key_path_var.set("")
 
@@ -836,8 +839,8 @@ class App(tk.Tk):
 
         # Remove stored key file
         if server.get("stored_key_path"):
-            p = Path(server["stored_key_path"])
-            if p.exists():
+            p = database.resolve_key_path(self._data_dir, server["stored_key_path"])
+            if p and p.exists():
                 p.unlink()
 
         database.delete_server(self._conn, server["id"])
