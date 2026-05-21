@@ -272,19 +272,22 @@ class App(tk.Tk):
 
         ttk.Label(row1, text=i18n.t("servers.name")).pack(side=tk.LEFT)
         self._srv_name_var = tk.StringVar()
-        ttk.Entry(row1, textvariable=self._srv_name_var, width=12).pack(side=tk.LEFT, padx=(4, 12))
+        ttk.Entry(row1, textvariable=self._srv_name_var, width=30).pack(side=tk.LEFT, padx=(4, 12), fill=tk.X, expand=True)
 
-        ttk.Label(row1, text=i18n.t("servers.host")).pack(side=tk.LEFT)
+        row1b = ttk.Frame(add_frame)
+        row1b.pack(fill=tk.X, pady=2)
+
+        ttk.Label(row1b, text=i18n.t("servers.host")).pack(side=tk.LEFT)
         self._srv_host_var = tk.StringVar()
-        ttk.Entry(row1, textvariable=self._srv_host_var, width=18).pack(side=tk.LEFT, padx=(4, 12))
+        ttk.Entry(row1b, textvariable=self._srv_host_var, width=22).pack(side=tk.LEFT, padx=(4, 12))
 
-        ttk.Label(row1, text=i18n.t("servers.port")).pack(side=tk.LEFT)
+        ttk.Label(row1b, text=i18n.t("servers.port")).pack(side=tk.LEFT)
         self._srv_port_var = tk.StringVar(value="22")
-        ttk.Entry(row1, textvariable=self._srv_port_var, width=6).pack(side=tk.LEFT, padx=(4, 12))
+        ttk.Entry(row1b, textvariable=self._srv_port_var, width=6).pack(side=tk.LEFT, padx=(4, 12))
 
-        ttk.Label(row1, text=i18n.t("servers.username")).pack(side=tk.LEFT)
+        ttk.Label(row1b, text=i18n.t("servers.username")).pack(side=tk.LEFT)
         self._srv_user_var = tk.StringVar()
-        ttk.Entry(row1, textvariable=self._srv_user_var, width=10).pack(side=tk.LEFT, padx=(4, 8))
+        ttk.Entry(row1b, textvariable=self._srv_user_var, width=12).pack(side=tk.LEFT, padx=(4, 8))
 
         # Auth type row
         row2 = ttk.Frame(add_frame)
@@ -379,8 +382,8 @@ class App(tk.Tk):
 
     def _select_key_file(self):
         filetypes = [
-            ("SSH Keys", "*.pem *.key id_rsa id_ed25519"),
-            (i18n.t("msg.keyfile_all"), "*.*"),
+            ("PEM Keys", "*.pem"),
+            ("All Files", "*"),
         ]
         path = filedialog.askopenfilename(
             title=i18n.t("msg.select_key_file"),
