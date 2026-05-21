@@ -49,16 +49,20 @@ jobs:
         if: matrix.target == 'windows'
         run: uv run pyinstaller --onefile --windowed --name ssh-key-manager.exe --icon assets/icon.ico --add-data "assets/icon.png;assets" --hidden-import=paramiko --hidden-import=nacl --hidden-import=cryptography src/ssh_key_manager/__main__.py
 
-      - name: Package macOS .app
+      - name: Package macOS .dmg
         if: matrix.target == 'macos'
-        run: cd dist && zip -r ssh-key-manager-macos.zip "ssh-key-manager.app"
+        run: |
+          hdiutil create -volname "SSH Key Manager" \
+            -srcfolder dist/ssh-key-manager.app \
+            -ov -format UDZO \
+            dist/ssh-key-manager.dmg
 
       - name: Upload artifact (macOS)
         if: matrix.target == 'macos'
         uses: actions/upload-artifact@v4
         with:
           name: ssh-key-manager-macos
-          path: dist/ssh-key-manager-macos.zip
+          path: dist/ssh-key-manager.dmg
 
       - name: Upload artifact (Windows)
         if: matrix.target == 'windows'
@@ -91,16 +95,16 @@ jobs:
             ## SSH Key Manager v${{ steps.version.outputs.VERSION }}
 
             ### Downloads
-            - **macOS**: `ssh-key-manager-macos.zip` — 解压后双击 `.app` 运行
+            - **macOS**: `ssh-key-manager.dmg` — 打开后拖入 Applications 运行
             - **Windows**: `ssh-key-manager.exe` (Windows 10+)
 
             ### Usage
             1. Download the file for your platform
-            2. **macOS**: unzip and double-click `ssh-key-manager.app`
+            2. **macOS**: open `.dmg` and drag to Applications
             3. **Windows**: double-click `ssh-key-manager.exe`
             4. On first launch you'll choose a data directory
             5. Place the data directory in OneDrive/iCloud for cross-device sync
           files: |
-            artifacts/ssh-key-manager-macos/ssh-key-manager-macos.zip
+            artifacts/ssh-key-manager-macos/ssh-key-manager.dmg
             artifacts/ssh-key-manager-windows/ssh-key-manager.exe
           generate_release_notes: true
