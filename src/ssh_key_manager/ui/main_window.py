@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import shutil
 import uuid
+import subprocess
+import platform
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from pathlib import Path
@@ -37,6 +39,9 @@ class App(tk.Tk):
         self.geometry("960x640")
         self.minsize(800, 500)
 
+        # Set window icon
+        self._set_app_icon()
+
         # Apply theme
         self._apply_theme()
 
@@ -45,6 +50,16 @@ class App(tk.Tk):
 
         # Load initial data
         self._refresh_all()
+
+    def _set_app_icon(self):
+        icon_path = app_config.get_asset_path("icon.png")
+        if icon_path and icon_path.exists():
+            try:
+                img = tk.PhotoImage(file=str(icon_path))
+                self.iconphoto(True, img)
+                self._icon_image = img  # keep a reference to prevent GC
+            except Exception:
+                pass  # icon is non-critical
 
     def _apply_theme(self):
         style = ttk.Style(self)
@@ -255,6 +270,12 @@ class App(tk.Tk):
         )
         self._btn_export.pack(side=tk.LEFT, padx=(0, 4))
 
+        self._btn_open_location = ttk.Button(
+            btn_frame, text=i18n.t("keys.btn_open_location"), style="Action.TButton",
+            command=self._open_key_location, state=tk.DISABLED
+        )
+        self._btn_open_location.pack(side=tk.LEFT, padx=(0, 4))
+
         self._btn_revoke = ttk.Button(
             btn_frame, text=i18n.t("keys.btn_revoke"), style="Danger.TButton",
             command=self._revoke_key, state=tk.DISABLED
@@ -262,6 +283,8 @@ class App(tk.Tk):
         self._btn_revoke.pack(side=tk.LEFT)
 
         self._keys_tree.bind("<<TreeviewSelect>>", self._on_key_select)
+        self._keys_tree.bind("<Button-2>", self._on_key_right_click)   # macOS right-click
+        self._keys_tree.bind("<Button-3>", self._on_key_right_click)   # Windows/Linux right-click
 
     def _build_servers_page(self):
         page = ttk.Frame(self._content)
@@ -591,6 +614,33 @@ class App(tk.Tk):
         except Exception as e:
             messagebox.showerror(i18n.t("dialog.error"), i18n.t("msg.export_fail", error=e))
 
+    def _open_key_location(self):
+        """Open the file manager at the private key's directory."""
+        key = self._get_selected_key()
+        if not key:
+            return
+
+        key_path = Path(key["private_key_path"])
+        if not key_path.exists():
+            messagebox.showwarning(
+                i18n.t("dialog.warning"),
+                i18n.t("msg.key_file_not_found"),
+            )
+            return
+
+        self._reveal_in_file_manager(key_path)
+
+    @staticmethod
+    def _reveal_in_file_manager(path: Path):
+        """Open the system file manager and reveal the given path."""
+        system = platform.system()
+        if system == "Darwin":
+            subprocess.Popen(["open", "-R", str(path)])
+        elif system == "Windows":
+            subprocess.Popen(["explorer", "/select,", str(path)])
+        else:
+            subprocess.Popen(["xdg-open", str(path.parent)])
+
     def _revoke_key(self):
         key = self._get_selected_key()
         if not key:
@@ -624,13 +674,32 @@ class App(tk.Tk):
         self._refresh_keys()
         self._btn_share.configure(state=tk.DISABLED)
         self._btn_export.configure(state=tk.DISABLED)
+        self._btn_open_location.configure(state=tk.DISABLED)
         self._btn_revoke.configure(state=tk.DISABLED)
 
     def _on_key_select(self, _event):
         has_sel = bool(self._keys_tree.selection())
         self._btn_share.configure(state=tk.NORMAL if has_sel else tk.DISABLED)
         self._btn_export.configure(state=tk.NORMAL if has_sel else tk.DISABLED)
+        self._btn_open_location.configure(state=tk.NORMAL if has_sel else tk.DISABLED)
         self._btn_revoke.configure(state=tk.NORMAL if has_sel else tk.DISABLED)
+
+    def _on_key_right_click(self, event):
+        """Show context menu on right-click."""
+        item = self._keys_tree.identify_row(event.y)
+        if item:
+            self._keys_tree.selection_set(item)
+            self._on_key_select(None)
+            menu = tk.Menu(self, tearoff=0)
+            menu.add_command(
+                label=i18n.t("keys.menu_open_location"),
+                command=self._open_key_location,
+            )
+            menu.add_command(
+                label=i18n.t("keys.btn_export"),
+                command=self._export_key,
+            )
+            menu.post(event.x_root, event.y_root)
 
     # --- Server actions ---
 

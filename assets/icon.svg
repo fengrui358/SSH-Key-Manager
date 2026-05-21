@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Background gradient - macOS style with inner light -->
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4F8BFF"/>
+      <stop offset="100%" stop-color="#1D4ED8"/>
+    </linearGradient>
+    <!-- Subtle top highlight for depth -->
+    <linearGradient id="highlight" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.25)"/>
+      <stop offset="50%" stop-color="rgba(255,255,255,0.0)"/>
+    </linearGradient>
+    <!-- Key gradient -->
+    <linearGradient id="keyGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#C8DDFD"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Squircle background (macOS-style rounded rectangle with continuous curvature) -->
+  <rect x="24" y="24" width="464" height="464" rx="112" ry="112" fill="url(#bg)"/>
+
+  <!-- Inner highlight for macOS depth effect -->
+  <rect x="24" y="24" width="464" height="464" rx="112" ry="112" fill="url(#highlight)"/>
+
+  <!-- Signal waves (connection motif) -->
+  <path d="M 156 216 Q 196 172 256 172 Q 316 172 356 216"
+        fill="none" stroke="rgba(255,255,255,0.30)" stroke-width="7" stroke-linecap="round"/>
+  <path d="M 132 238 Q 196 148 256 148 Q 316 148 380 238"
+        fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="7" stroke-linecap="round"/>
+  <path d="M 108 260 Q 196 124 256 124 Q 316 124 404 260"
+        fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="7" stroke-linecap="round"/>
+
+  <!-- Key body - vertical shaft -->
+  <rect x="238" y="256" width="36" height="156" rx="6" fill="url(#keyGrad)"/>
+
+  <!-- Key bow (circular head) -->
+  <circle cx="256" cy="236" r="56" fill="none" stroke="white" stroke-width="26"/>
+
+  <!-- Key teeth -->
+  <rect x="274" y="348" width="32" height="16" rx="4" fill="white"/>
+  <rect x="274" y="376" width="22" height="16" rx="4" fill="white"/>
+  <rect x="274" y="316" width="28" height="16" rx="4" fill="white"/>
+</svg>

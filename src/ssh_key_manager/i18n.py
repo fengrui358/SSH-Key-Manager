@@ -34,6 +34,8 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "keys.btn_share": "Share for Claude",
         "keys.btn_revoke": "Revoke Key",
         "keys.btn_export": "Export Key",
+        "keys.btn_open_location": "Open Location",
+        "keys.menu_open_location": "Show in File Manager",
         "keys.status_active": "Active",
         "keys.status_expired": "Expired",
         "keys.hour": "{h} hour",
@@ -116,6 +118,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "msg.export_title": "Export Private Key",
         "msg.export_success": "Private key exported to:\n{path}",
         "msg.export_fail": "Export failed: {error}",
+        "msg.key_file_not_found": "Private key file not found. It may have been moved or deleted.",
     },
     "zh": {
         # App
@@ -144,6 +147,8 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "keys.btn_share": "分享给 Claude",
         "keys.btn_revoke": "撤销密钥",
         "keys.btn_export": "导出密钥",
+        "keys.btn_open_location": "打开位置",
+        "keys.menu_open_location": "在文件管理器中显示",
         "keys.status_active": "有效",
         "keys.status_expired": "已过期",
         "keys.hour": "{h} 小时",
@@ -226,6 +231,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "msg.export_title": "导出私钥",
         "msg.export_success": "私钥已导出到：\n{path}",
         "msg.export_fail": "导出失败：{error}",
+        "msg.key_file_not_found": "私钥文件未找到，可能已被移动或删除。",
     },
 }
 

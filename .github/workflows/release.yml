@@ -33,10 +33,25 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
-      - name: Build with PyInstaller
+      - name: Build with PyInstaller (macOS)
+        if: matrix.target == 'macos'
         run: |
           uv run pyinstaller --onefile --windowed \
-            --name ssh-key-manager${{ matrix.ext }} \
+            --name ssh-key-manager \
+            --icon assets/icon.icns \
+            --add-data "assets/icon.png:assets" \
+            --hidden-import=paramiko \
+            --hidden-import=nacl \
+            --hidden-import=cryptography \
+            src/ssh_key_manager/__main__.py
+
+      - name: Build with PyInstaller (Windows)
+        if: matrix.target == 'windows'
+        run: |
+          uv run pyinstaller --onefile --windowed \
+            --name ssh-key-manager.exe \
+            --icon assets/icon.ico \
+            --add-data "assets/icon.png:assets" \
             --hidden-import=paramiko \
             --hidden-import=nacl \
             --hidden-import=cryptography \

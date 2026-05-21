@@ -58,6 +58,15 @@ def load_config(data_dir: Path) -> dict:
     return {}
 
 
+def get_asset_path(filename: str) -> Path:
+    """Resolve asset file path, works for both source and frozen builds."""
+    if getattr(sys, "frozen", False):
+        base = Path(sys._MEIPASS)
+    else:
+        base = Path(__file__).resolve().parent.parent.parent
+    return base / "assets" / filename
+
+
 def save_config(data_dir: Path, config: dict) -> None:
     """Save application config to data directory."""
     cfg_path = data_dir / CONFIG_FILE
