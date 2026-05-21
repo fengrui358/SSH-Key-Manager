@@ -1,0 +1,86 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            target: macos
+            ext: ''
+          - os: windows-latest
+            target: windows
+            ext: '.exe'
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Build with PyInstaller
+        run: |
+          uv run pyinstaller --onefile --windowed \
+            --name ssh-key-manager${{ matrix.ext }} \
+            --hidden-import=paramiko \
+            --hidden-import=nacl \
+            --hidden-import=cryptography \
+            src/ssh_key_manager/__main__.py
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ssh-key-manager-${{ matrix.target }}
+          path: dist/ssh-key-manager${{ matrix.ext }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract version
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: SSH Key Manager v${{ steps.version.outputs.VERSION }}
+          body: |
+            ## SSH Key Manager v${{ steps.version.outputs.VERSION }}
+
+            ### Downloads
+            - **macOS**: `ssh-key-manager` (macOS 12+)
+            - **Windows**: `ssh-key-manager.exe` (Windows 10+)
+
+            ### Usage
+            1. Download the file for your platform
+            2. Make it executable (macOS: `chmod +x ssh-key-manager`)
+            3. Run it — on first launch you'll choose a data directory
+            4. Place the data directory in OneDrive/iCloud for cross-device sync
+          files: |
+            artifacts/ssh-key-manager-macos/ssh-key-manager
+            artifacts/ssh-key-manager-windows/ssh-key-manager.exe
+          generate_release_notes: true

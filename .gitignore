@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+dist/
+build/
+*.spec
+*.egg-info/
+data-dir.txt
+task_plan.md
+findings.md
+progress.md
+.claude/
+.planning/
