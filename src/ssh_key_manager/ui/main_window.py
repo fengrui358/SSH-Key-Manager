@@ -381,13 +381,11 @@ class App(tk.Tk):
             self._pwd_frame.pack(fill=tk.X, pady=2)
 
     def _select_key_file(self):
-        filetypes = [
-            ("PEM Keys", "*.pem"),
-            ("All Files", "*"),
-        ]
+        ssh_dir = Path.home() / ".ssh"
+        initial = ssh_dir if ssh_dir.exists() else Path.home()
         path = filedialog.askopenfilename(
             title=i18n.t("msg.select_key_file"),
-            filetypes=filetypes,
+            initialdir=str(initial),
         )
         if path:
             self._srv_key_path_var.set(path)
