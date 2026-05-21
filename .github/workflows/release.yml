@@ -36,7 +36,7 @@ jobs:
       - name: Build with PyInstaller (macOS)
         if: matrix.target == 'macos'
         run: |
-          uv run pyinstaller --onefile --windowed \
+          uv run pyinstaller --onedir --windowed \
             --name ssh-key-manager \
             --icon assets/icon.icns \
             --add-data "assets/icon.png:assets" \
@@ -49,11 +49,23 @@ jobs:
         if: matrix.target == 'windows'
         run: uv run pyinstaller --onefile --windowed --name ssh-key-manager.exe --icon assets/icon.ico --add-data "assets/icon.png;assets" --hidden-import=paramiko --hidden-import=nacl --hidden-import=cryptography src/ssh_key_manager/__main__.py
 
-      - name: Upload artifact
+      - name: Package macOS .app
+        if: matrix.target == 'macos'
+        run: cd dist && zip -r ssh-key-manager-macos.zip "ssh-key-manager.app"
+
+      - name: Upload artifact (macOS)
+        if: matrix.target == 'macos'
         uses: actions/upload-artifact@v4
         with:
-          name: ssh-key-manager-${{ matrix.target }}
-          path: dist/ssh-key-manager${{ matrix.ext }}
+          name: ssh-key-manager-macos
+          path: dist/ssh-key-manager-macos.zip
+
+      - name: Upload artifact (Windows)
+        if: matrix.target == 'windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ssh-key-manager-windows
+          path: dist/ssh-key-manager.exe
 
   release:
     needs: build
@@ -79,15 +91,16 @@ jobs:
             ## SSH Key Manager v${{ steps.version.outputs.VERSION }}
 
             ### Downloads
-            - **macOS**: `ssh-key-manager` (macOS 12+)
+            - **macOS**: `ssh-key-manager-macos.zip` — 解压后双击 `.app` 运行
             - **Windows**: `ssh-key-manager.exe` (Windows 10+)
 
             ### Usage
             1. Download the file for your platform
-            2. Make it executable (macOS: `chmod +x ssh-key-manager`)
-            3. Run it — on first launch you'll choose a data directory
-            4. Place the data directory in OneDrive/iCloud for cross-device sync
+            2. **macOS**: unzip and double-click `ssh-key-manager.app`
+            3. **Windows**: double-click `ssh-key-manager.exe`
+            4. On first launch you'll choose a data directory
+            5. Place the data directory in OneDrive/iCloud for cross-device sync
           files: |
-            artifacts/ssh-key-manager-macos/ssh-key-manager
+            artifacts/ssh-key-manager-macos/ssh-key-manager-macos.zip
             artifacts/ssh-key-manager-windows/ssh-key-manager.exe
           generate_release_notes: true
