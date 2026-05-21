@@ -47,6 +47,16 @@ def _init_schema(conn: sqlite3.Connection) -> None:
             FOREIGN KEY (server_id) REFERENCES servers(id) ON DELETE CASCADE
         );
     """)
+    _migrate(conn)
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    """Add missing columns to tables created with older schema versions."""
+    cols = {row[1] for row in conn.execute("PRAGMA table_info(servers)").fetchall()}
+    if "auth_type" not in cols:
+        conn.execute("ALTER TABLE servers ADD COLUMN auth_type TEXT NOT NULL DEFAULT 'password'")
+    if "stored_key_path" not in cols:
+        conn.execute("ALTER TABLE servers ADD COLUMN stored_key_path TEXT")
 
 
 # --- Server operations ---
