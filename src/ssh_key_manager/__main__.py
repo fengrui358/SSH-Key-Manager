@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from .ui.main_window import App
+from ssh_key_manager.ui.main_window import App
 
 
 def main():
