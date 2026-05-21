@@ -4,9 +4,10 @@
 
 ## 功能特性
 
+- **密钥导出** — 将私钥导出到本地任意位置，支持右键/按钮在文件管理器中定位
 - **临时密钥生成** — 生成带有效期的 ed25519 密钥（1/2/4/8/24/72 小时）
 - **一键部署** — 自动将公钥部署到远程服务器的 `authorized_keys`
-- **服务器管理** — 添加、删除、测试常用服务器连接
+- **服务器管理** — 添加、删除、编辑、测试常用服务器连接（支持密码和私钥认证）
 - **Claude Code 分享** — 一键生成格式化的密钥信息并复制到剪贴板
 - **密钥撤销** — 同时从服务器和本地删除密钥
 - **自动清理** — 启动时自动清理过期密钥，也支持手动触发
@@ -18,19 +19,17 @@
 
 | 平台 | 文件 | 要求 |
 |------|------|------|
-| macOS | `ssh-key-manager` | macOS 12+ |
+| macOS | `ssh-key-manager.dmg` | macOS 12+ |
 | Windows | `ssh-key-manager.exe` | Windows 10+ |
 
 无需安装任何依赖，下载后直接运行。
 
-### macOS 首次运行
+### macOS 安装
 
-```bash
-chmod +x ssh-key-manager
-./ssh-key-manager
-```
-
-如果 macOS 阻止运行，前往 **系统设置 → 隐私与安全性** 点击「仍要打开」。
+1. 打开下载的 `.dmg` 文件
+2. 将 `ssh-key-manager.app` 拖入 `Applications` 文件夹
+3. **首次打开**：右键点击 App → 选择「打开」（因为未经过 Apple 公证，直接双击会提示无法验证开发者）
+4. 或者终端执行：`xattr -cr /Applications/ssh-key-manager.app && open /Applications/ssh-key-manager.app`
 
 ### Windows 运行
 
@@ -126,16 +125,16 @@ uv run python -m src.ssh_key_manager
 
 ## 发布新版本
 
-1. 修改 `src/ssh_key_manager/__init__.py` 中的 `__version__`
+1. 修改 `src/ssh_key_manager/__init__.py` 和 `pyproject.toml` 中的版本号
 2. 提交并打 tag：
 
 ```bash
-git add -A && git commit -m "release: v0.2.0"
-git tag v0.2.0
+git add -A && git commit -m "release: v0.3.0"
+git tag v0.3.0
 git push origin main --tags
 ```
 
-3. GitHub Actions 会自动构建 macOS + Windows 并创建 Release
+3. GitHub Actions 会自动构建 macOS（.dmg）+ Windows（.exe）并创建 Release
 
 ## 技术栈
 
