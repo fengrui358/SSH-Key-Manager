@@ -44,6 +44,8 @@ jobs:
             --hidden-import=nacl \
             --hidden-import=cryptography \
             src/ssh_key_manager/__main__.py
+          # Ad-hoc sign the .app to reduce Gatekeeper friction
+          codesign --sign - --force --deep dist/ssh-key-manager.app
 
       - name: Build with PyInstaller (Windows)
         if: matrix.target == 'windows'
@@ -103,7 +105,9 @@ jobs:
 
             ### Usage
             1. Download the file for your platform
-            2. **macOS**: open `.dmg` and drag to Applications
+            2. **macOS**: open `.dmg` and drag `ssh-key-manager.app` to the `Applications` folder
+               - First launch: **right-click the app > Open** (Gatekeeper will show a warning since the app is not notarized)
+               - Alternatively, run in Terminal: `xattr -cr /Applications/ssh-key-manager.app && open /Applications/ssh-key-manager.app`
             3. **Windows**: double-click `ssh-key-manager.exe`
             4. On first launch you'll choose a data directory
             5. Place the data directory in OneDrive/iCloud for cross-device sync
