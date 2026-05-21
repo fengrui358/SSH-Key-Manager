@@ -96,6 +96,25 @@ def delete_server(conn: sqlite3.Connection, server_id: int) -> bool:
     return cur.rowcount > 0
 
 
+def update_server(
+    conn: sqlite3.Connection,
+    server_id: int,
+    name: str,
+    host: str,
+    port: int,
+    username: str,
+    auth_type: str = "password",
+    stored_key_path: str | None = None,
+) -> bool:
+    cur = conn.execute(
+        """UPDATE servers SET name=?, host=?, port=?, username=?, auth_type=?, stored_key_path=?
+           WHERE id=?""",
+        (name, host, port, username, auth_type, stored_key_path, server_id),
+    )
+    conn.commit()
+    return cur.rowcount > 0
+
+
 # --- Key operations ---
 
 

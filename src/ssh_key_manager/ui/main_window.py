@@ -249,6 +249,12 @@ class App(tk.Tk):
         )
         self._btn_share.pack(side=tk.LEFT, padx=(0, 4))
 
+        self._btn_export = ttk.Button(
+            btn_frame, text=i18n.t("keys.btn_export"), style="Action.TButton",
+            command=self._export_key, state=tk.DISABLED
+        )
+        self._btn_export.pack(side=tk.LEFT, padx=(0, 4))
+
         self._btn_revoke = ttk.Button(
             btn_frame, text=i18n.t("keys.btn_revoke"), style="Danger.TButton",
             command=self._revoke_key, state=tk.DISABLED
@@ -333,10 +339,17 @@ class App(tk.Tk):
             btn_row, text=i18n.t("servers.btn_test"), style="Action.TButton",
             command=self._test_server
         ).pack(side=tk.LEFT, padx=(0, 8))
-        ttk.Button(
+        self._btn_cancel_edit = ttk.Button(
+            btn_row, text=i18n.t("servers.btn_cancel_edit"), style="Action.TButton",
+            command=self._cancel_edit_server
+        )
+        # Hidden by default, shown when editing
+        self._srv_submit_btn = ttk.Button(
             btn_row, text=i18n.t("servers.btn_add"), style="Action.TButton",
             command=self._add_server
-        ).pack(side=tk.RIGHT)
+        )
+        self._srv_submit_btn.pack(side=tk.RIGHT)
+        self._editing_server_id = None
 
         # Server list
         list_frame = ttk.LabelFrame(page, text=i18n.t("servers.saved"), padding=8)
@@ -368,6 +381,12 @@ class App(tk.Tk):
             command=self._delete_server, state=tk.DISABLED
         )
         self._btn_del_server.pack(side=tk.LEFT)
+
+        self._btn_edit_server = ttk.Button(
+            btn_frame, text=i18n.t("servers.btn_edit"), style="Action.TButton",
+            command=self._edit_server, state=tk.DISABLED
+        )
+        self._btn_edit_server.pack(side=tk.LEFT, padx=(4, 0))
 
         self._servers_tree.bind("<<TreeviewSelect>>", self._on_server_select)
 
@@ -545,6 +564,33 @@ class App(tk.Tk):
             text.pack(fill=tk.BOTH, expand=True, padx=8, pady=8)
             text.insert("1.0", content)
 
+    def _export_key(self):
+        key = self._get_selected_key()
+        if not key:
+            return
+
+        src_path = Path(key["private_key_path"])
+        if not src_path.exists():
+            messagebox.showerror(i18n.t("dialog.error"), i18n.t("msg.export_fail", error="Private key file not found"))
+            return
+
+        dest = filedialog.asksaveasfilename(
+            title=i18n.t("msg.export_title"),
+            initialfile=src_path.name,
+            defaultextension="",
+        )
+        if not dest:
+            return
+
+        try:
+            shutil.copy2(src_path, Path(dest))
+            # Set permissions on exported file
+            from ..permissions import set_private_file
+            set_private_file(Path(dest))
+            messagebox.showinfo(i18n.t("dialog.success"), i18n.t("msg.export_success", path=dest))
+        except Exception as e:
+            messagebox.showerror(i18n.t("dialog.error"), i18n.t("msg.export_fail", error=e))
+
     def _revoke_key(self):
         key = self._get_selected_key()
         if not key:
@@ -577,11 +623,13 @@ class App(tk.Tk):
             messagebox.showwarning(i18n.t("dialog.warning"), msg)
         self._refresh_keys()
         self._btn_share.configure(state=tk.DISABLED)
+        self._btn_export.configure(state=tk.DISABLED)
         self._btn_revoke.configure(state=tk.DISABLED)
 
     def _on_key_select(self, _event):
         has_sel = bool(self._keys_tree.selection())
         self._btn_share.configure(state=tk.NORMAL if has_sel else tk.DISABLED)
+        self._btn_export.configure(state=tk.NORMAL if has_sel else tk.DISABLED)
         self._btn_revoke.configure(state=tk.NORMAL if has_sel else tk.DISABLED)
 
     # --- Server actions ---
@@ -623,16 +671,72 @@ class App(tk.Tk):
             dest_path = srv_keys_dir / dest_name
             shutil.copy2(src, dest_path)
 
-            # Set private permissions
             from ..permissions import set_private_file, set_private_dir
             set_private_dir(srv_keys_dir)
             set_private_file(dest_path)
 
             stored_key_path = str(dest_path)
 
-        database.add_server(self._conn, name, host, port, username, auth_type, stored_key_path)
-        messagebox.showinfo(i18n.t("dialog.success"), i18n.t("msg.server_added", name=name))
+        if self._editing_server_id:
+            # Update existing server
+            old_server = database.get_server(self._conn, self._editing_server_id)
+            # Remove old stored key if switching away from key auth or key changed
+            if old_server and old_server.get("stored_key_path"):
+                if auth_type != "key" or stored_key_path != old_server["stored_key_path"]:
+                    old_p = Path(old_server["stored_key_path"])
+                    if old_p.exists():
+                        old_p.unlink()
+            # Keep existing key if auth type unchanged and no new key selected
+            if auth_type == "key" and not stored_key_path and old_server and old_server.get("stored_key_path"):
+                stored_key_path = old_server["stored_key_path"]
 
+            database.update_server(self._conn, self._editing_server_id, name, host, port, username, auth_type, stored_key_path)
+            messagebox.showinfo(i18n.t("dialog.success"), i18n.t("msg.server_updated", name=name))
+            self._cancel_edit_server()
+        else:
+            # Add new server
+            database.add_server(self._conn, name, host, port, username, auth_type, stored_key_path)
+            messagebox.showinfo(i18n.t("dialog.success"), i18n.t("msg.server_added", name=name))
+
+        self._clear_server_form()
+        self._refresh_servers()
+        self._refresh_server_combo()
+
+    def _edit_server(self):
+        server = self._get_selected_server()
+        if not server:
+            return
+
+        self._editing_server_id = server["id"]
+        self._srv_name_var.set(server["name"])
+        self._srv_host_var.set(server["host"])
+        self._srv_port_var.set(str(server["port"]))
+        self._srv_user_var.set(server["username"])
+        self._srv_auth_var.set(server.get("auth_type", "password"))
+        self._on_auth_type_change()
+
+        if server.get("auth_type") == "key" and server.get("stored_key_path"):
+            self._srv_key_path_var.set(server["stored_key_path"])
+        else:
+            self._srv_key_path_var.set("")
+
+        self._srv_pass_var.set("")
+        self._srv_key_pass_var.set("")
+
+        # Switch button to "Update" mode
+        self._srv_submit_btn.configure(text=i18n.t("servers.btn_add").replace(i18n.t("servers.btn_add").split()[0], "Update") if i18n.get_lang() == "en" else "更新服务器")
+        # Simple approach: just change text based on context
+        if self._editing_server_id:
+            self._srv_submit_btn.configure(text="Update Server" if i18n.get_lang() == "en" else "更新服务器")
+        self._btn_cancel_edit.pack(side=tk.RIGHT, padx=(4, 0))
+
+    def _cancel_edit_server(self):
+        self._editing_server_id = None
+        self._srv_submit_btn.configure(text=i18n.t("servers.btn_add"))
+        self._btn_cancel_edit.pack_forget()
+        self._clear_server_form()
+
+    def _clear_server_form(self):
         self._srv_name_var.set("")
         self._srv_host_var.set("")
         self._srv_port_var.set("22")
@@ -642,9 +746,6 @@ class App(tk.Tk):
         self._srv_key_pass_var.set("")
         self._srv_auth_var.set("password")
         self._on_auth_type_change()
-
-        self._refresh_servers()
-        self._refresh_server_combo()
 
     def _delete_server(self):
         server = self._get_selected_server()
@@ -707,6 +808,7 @@ class App(tk.Tk):
     def _on_server_select(self, _event):
         has_sel = bool(self._servers_tree.selection())
         self._btn_del_server.configure(state=tk.NORMAL if has_sel else tk.DISABLED)
+        self._btn_edit_server.configure(state=tk.NORMAL if has_sel else tk.DISABLED)
 
     # --- Utility actions ---
 

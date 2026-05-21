@@ -33,6 +33,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "keys.col_status": "Status",
         "keys.btn_share": "Share for Claude",
         "keys.btn_revoke": "Revoke Key",
+        "keys.btn_export": "Export Key",
         "keys.status_active": "Active",
         "keys.status_expired": "Expired",
         "keys.hour": "{h} hour",
@@ -62,6 +63,8 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "servers.col_username": "Username",
         "servers.col_auth": "Auth",
         "servers.btn_delete": "Delete Server",
+        "servers.btn_edit": "Edit Server",
+        "servers.btn_cancel_edit": "Cancel",
         # Dialogs
         "dialog.welcome_title": "Welcome",
         "dialog.welcome_msg": (
@@ -109,6 +112,10 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "msg.revoked": "{message}",
         "msg.select_key_file": "Select SSH Private Key",
         "msg.keyfile_all": "All Files",
+        "msg.server_updated": "Server '{name}' updated",
+        "msg.export_title": "Export Private Key",
+        "msg.export_success": "Private key exported to:\n{path}",
+        "msg.export_fail": "Export failed: {error}",
     },
     "zh": {
         # App
@@ -136,6 +143,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "keys.col_status": "状态",
         "keys.btn_share": "分享给 Claude",
         "keys.btn_revoke": "撤销密钥",
+        "keys.btn_export": "导出密钥",
         "keys.status_active": "有效",
         "keys.status_expired": "已过期",
         "keys.hour": "{h} 小时",
@@ -165,6 +173,8 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "servers.col_username": "用户名",
         "servers.col_auth": "认证",
         "servers.btn_delete": "删除服务器",
+        "servers.btn_edit": "编辑服务器",
+        "servers.btn_cancel_edit": "取消",
         # Dialogs
         "dialog.welcome_title": "欢迎",
         "dialog.welcome_msg": (
@@ -212,6 +222,10 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "msg.revoked": "{message}",
         "msg.select_key_file": "选择 SSH 私钥文件",
         "msg.keyfile_all": "所有文件",
+        "msg.server_updated": "服务器「{name}」已更新",
+        "msg.export_title": "导出私钥",
+        "msg.export_success": "私钥已导出到：\n{path}",
+        "msg.export_fail": "导出失败：{error}",
     },
 }
 
