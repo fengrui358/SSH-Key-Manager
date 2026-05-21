@@ -18,6 +18,8 @@ from .permissions import set_private_dir, set_private_file
 
 def generate_key(data_dir: Path, conn, server_id: int, duration_hours: int, label: str = "") -> dict:
     """Generate an ed25519 key pair, save to data_dir/keys/, and register in DB."""
+    from datetime import timedelta
+
     keys_dir = data_dir / "keys"
     keys_dir.mkdir(exist_ok=True)
     set_private_dir(keys_dir)
@@ -26,6 +28,8 @@ def generate_key(data_dir: Path, conn, server_id: int, duration_hours: int, labe
     key_name = label or f"key_{key_id_str}"
     priv_path = keys_dir / f"id_ed25519_{key_id_str}"
     pub_path = keys_dir / f"id_ed25519_{key_id_str}.pub"
+
+    expires_at = datetime.now(timezone.utc) + timedelta(hours=duration_hours)
 
     # Generate ed25519 key using cryptography library
     private_key = Ed25519PrivateKey.generate()
@@ -55,7 +59,11 @@ def generate_key(data_dir: Path, conn, server_id: int, duration_hours: int, labe
         len(bytes(verify_key)).to_bytes(4, "big") + bytes(verify_key)
     )
     pub_b64 = base64.b64encode(pub_blob).decode()
-    pub_path.write_text(f"ssh-ed25519 {pub_b64}\n", encoding="utf-8")
+
+    # Comment with metadata: label, tool, expiry time
+    expires_str = expires_at.strftime("%Y-%m-%dT%H:%M:%SZ")
+    comment = f"{key_name}_ssh-key-manager_expires={expires_str}"
+    pub_path.write_text(f"ssh-ed25519 {pub_b64} {comment}\n", encoding="utf-8")
 
     # Register in database
     db_id = database.add_key(
