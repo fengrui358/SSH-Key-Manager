@@ -52,8 +52,11 @@ jobs:
       - name: Package macOS .dmg
         if: matrix.target == 'macos'
         run: |
+          mkdir -p dmg-root
+          cp -R dist/ssh-key-manager.app dmg-root/
+          ln -s /Applications dmg-root/Applications
           hdiutil create -volname "SSH Key Manager" \
-            -srcfolder dist/ssh-key-manager.app \
+            -srcfolder dmg-root \
             -ov -format UDZO \
             dist/ssh-key-manager.dmg
 
