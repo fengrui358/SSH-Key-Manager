@@ -66,6 +66,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "servers.col_auth": "Auth",
         "servers.btn_delete": "Delete Server",
         "servers.btn_edit": "Edit Server",
+        "servers.btn_revoke_all": "Revoke All Keys",
         "servers.btn_cancel_edit": "Cancel",
         # Dialogs
         "dialog.welcome_title": "Welcome",
@@ -80,6 +81,11 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "dialog.confirm_revoke": (
             "Are you sure you want to revoke key '{name}'?\n\n"
             "This will remove the key from {host} and delete local files."
+        ),
+        "dialog.confirm_revoke_all_title": "Confirm Revoke All",
+        "dialog.confirm_revoke_all": (
+            "Are you sure you want to revoke all {count} key(s) for server '{name}'?\n\n"
+            "This will remove all keys from {host} and delete local files."
         ),
         "dialog.confirm_delete_title": "Confirm Delete",
         "dialog.confirm_delete": "Are you sure you want to delete server '{name}'?",
@@ -119,6 +125,8 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "msg.export_success": "Private key exported to:\n{path}",
         "msg.export_fail": "Export failed: {error}",
         "msg.key_file_not_found": "Private key file not found. It may have been moved or deleted.",
+        "msg.no_keys_to_revoke": "No active keys to revoke for this server.",
+        "msg.all_keys_revoked": "Revoked {count} key(s) from server '{name}'.",
     },
     "zh": {
         # App
@@ -179,6 +187,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "servers.col_auth": "认证",
         "servers.btn_delete": "删除服务器",
         "servers.btn_edit": "编辑服务器",
+        "servers.btn_revoke_all": "撤回全部密钥",
         "servers.btn_cancel_edit": "取消",
         # Dialogs
         "dialog.welcome_title": "欢迎",
@@ -193,6 +202,11 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "dialog.confirm_revoke": (
             "确定要撤销密钥「{name}」吗？\n\n"
             "将从 {host} 移除公钥并删除本地文件。"
+        ),
+        "dialog.confirm_revoke_all_title": "确认撤回全部",
+        "dialog.confirm_revoke_all": (
+            "确定要撤回服务器「{name}」的全部 {count} 个密钥吗？\n\n"
+            "将从 {host} 移除所有公钥并删除本地文件。"
         ),
         "dialog.confirm_delete_title": "确认删除",
         "dialog.confirm_delete": "确定要删除服务器「{name}」吗？",
@@ -232,6 +246,8 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "msg.export_success": "私钥已导出到：\n{path}",
         "msg.export_fail": "导出失败：{error}",
         "msg.key_file_not_found": "私钥文件未找到，可能已被移动或删除。",
+        "msg.no_keys_to_revoke": "该服务器没有可撤回的活动密钥。",
+        "msg.all_keys_revoked": "已从服务器「{name}」撤回 {count} 个密钥。",
     },
 }
 

@@ -411,6 +411,12 @@ class App(tk.Tk):
         )
         self._btn_edit_server.pack(side=tk.LEFT, padx=(4, 0))
 
+        self._btn_revoke_all = ttk.Button(
+            btn_frame, text=i18n.t("servers.btn_revoke_all"), style="Danger.TButton",
+            command=self._revoke_all_server_keys, state=tk.DISABLED
+        )
+        self._btn_revoke_all.pack(side=tk.LEFT, padx=(12, 0))
+
         self._servers_tree.bind("<<TreeviewSelect>>", self._on_server_select)
 
     def _on_auth_type_change(self, _event=None):
@@ -847,6 +853,48 @@ class App(tk.Tk):
         messagebox.showinfo(i18n.t("dialog.success"), i18n.t("msg.server_deleted", name=server["name"]))
         self._refresh_all()
 
+    def _revoke_all_server_keys(self):
+        """Revoke all active keys for the selected server."""
+        server = self._get_selected_server()
+        if not server:
+            return
+
+        keys = database.list_keys_by_server(self._conn, server["id"])
+        if not keys:
+            messagebox.showinfo(i18n.t("dialog.info"), i18n.t("msg.no_keys_to_revoke"))
+            return
+
+        if not messagebox.askyesno(
+            i18n.t("dialog.confirm_revoke_all_title"),
+            i18n.t("dialog.confirm_revoke_all", count=len(keys), name=server["name"], host=server["host"]),
+        ):
+            return
+
+        auth = self._get_server_auth(server)
+        revoked = 0
+        for key in keys:
+            def make_deploy_remove(k):
+                def deploy_remove(**kwargs):
+                    return ssh_deploy.remove_public_key(
+                        host=k["server_host"],
+                        username=k["server_username"],
+                        port=22,
+                        public_key_path=k["public_key_path"],
+                        **auth,
+                    )
+                return deploy_remove
+
+            ok, _ = key_manager.revoke_key(self._data_dir, self._conn, key["id"], make_deploy_remove(key))
+            if ok:
+                revoked += 1
+
+        self._refresh_keys()
+        self._refresh_servers()
+        messagebox.showinfo(
+            i18n.t("dialog.success"),
+            i18n.t("msg.all_keys_revoked", count=revoked, name=server["name"]),
+        )
+
     def _test_server(self):
         host = self._srv_host_var.get().strip()
         username = self._srv_user_var.get().strip()
@@ -881,6 +929,7 @@ class App(tk.Tk):
         has_sel = bool(self._servers_tree.selection())
         self._btn_del_server.configure(state=tk.NORMAL if has_sel else tk.DISABLED)
         self._btn_edit_server.configure(state=tk.NORMAL if has_sel else tk.DISABLED)
+        self._btn_revoke_all.configure(state=tk.NORMAL if has_sel else tk.DISABLED)
 
     # --- Utility actions ---
 

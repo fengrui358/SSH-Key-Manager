@@ -179,6 +179,19 @@ def delete_key(conn: sqlite3.Connection, key_id: int) -> bool:
     return cur.rowcount > 0
 
 
+def list_keys_by_server(conn: sqlite3.Connection, server_id: int) -> list[dict]:
+    """List all non-revoked keys for a specific server."""
+    rows = conn.execute(
+        """SELECT k.*, s.name as server_name, s.host as server_host, s.username as server_username
+           FROM ssh_keys k
+           JOIN servers s ON k.server_id = s.id
+           WHERE k.server_id = ? AND k.revoked_at IS NULL
+           ORDER BY k.created_at DESC""",
+        (server_id,),
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
 def get_expired_keys(conn: sqlite3.Connection) -> list[dict]:
     now = _now_iso()
     rows = conn.execute(
