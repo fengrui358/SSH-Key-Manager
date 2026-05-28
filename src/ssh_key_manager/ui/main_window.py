@@ -484,9 +484,10 @@ class App(tk.Tk):
                 dur_label = f"{dur // 24}d"
             else:
                 dur_label = f"{dur}h"
+            server_display = f"{k['server_username']}@{k['server_host']}:{k['server_port']}"
             self._keys_tree.insert("", tk.END, iid=str(k["id"]), values=(
                 k["key_name"],
-                f"{k['server_username']}@{k['server_host']}",
+                server_display,
                 dur_label,
                 remaining,
                 status,
@@ -510,7 +511,7 @@ class App(tk.Tk):
         if not self._conn:
             return
         servers = database.list_servers(self._conn)
-        values = [f"{s['name']} ({s['username']}@{s['host']})" for s in servers]
+        values = [f"{s['name']} ({s['username']}@{s['host']}:{s['port']})" for s in servers]
         self._key_server_combo["values"] = values
         if values:
             self._key_server_combo.current(0)
@@ -533,7 +534,7 @@ class App(tk.Tk):
             return None
         servers = database.list_servers(self._conn)
         for s in servers:
-            combo_str = f"{s['name']} ({s['username']}@{s['host']})"
+            combo_str = f"{s['name']} ({s['username']}@{s['host']}:{s['port']})"
             if combo_str == sel:
                 return s["id"]
         return None
