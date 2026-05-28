@@ -29,7 +29,7 @@ def generate_key(data_dir: Path, conn, server_id: int, duration_hours: int, labe
     priv_path = keys_dir / f"id_ed25519_{key_id_str}"
     pub_path = keys_dir / f"id_ed25519_{key_id_str}.pub"
 
-    expires_at = datetime.now(timezone.utc) + timedelta(hours=duration_hours)
+    expires_at = datetime.now(timezone.utc) + timedelta(hours=duration_hours) if duration_hours > 0 else None
 
     # Generate ed25519 key using cryptography library
     private_key = Ed25519PrivateKey.generate()
@@ -61,7 +61,7 @@ def generate_key(data_dir: Path, conn, server_id: int, duration_hours: int, labe
     pub_b64 = base64.b64encode(pub_blob).decode()
 
     # Comment with metadata: label, tool, expiry time
-    expires_str = expires_at.strftime("%Y-%m-%dT%H:%M:%SZ")
+    expires_str = expires_at.strftime("%Y-%m-%dT%H:%M:%SZ") if expires_at else "permanent"
     comment = f"{key_name}_ssh-key-manager_expires={expires_str}"
     pub_path.write_text(f"ssh-ed25519 {pub_b64} {comment}\n", encoding="utf-8")
 
@@ -95,7 +95,7 @@ def revoke_key(data_dir: Path, conn, key_id: int, ssh_deploy_func=None) -> tuple
             ssh_deploy_func(
                 host=key["server_host"],
                 username=key["server_username"],
-                port=22,
+                port=key.get("server_port", 22),
                 public_key_content=None,
                 remove_key=key["public_key_path"],
             )
@@ -142,6 +142,8 @@ def get_public_key_content(public_key_path: str) -> str:
 
 def is_key_expired(key: dict) -> bool:
     """Check if a key has expired."""
+    if key.get("duration_hours") == 0:
+        return False
     expires = key.get("expires_at", "")
     if not expires:
         return False
@@ -154,10 +156,13 @@ def is_key_expired(key: dict) -> bool:
         return False
 
 
-def format_remaining_time(expires_at: str, lang: str = "en") -> str:
+def format_remaining_time(expires_at: str, lang: str = "en", duration_hours: int = 0) -> str:
     """Format remaining time until expiry."""
     try:
         from . import i18n
+
+        if duration_hours == 0:
+            return i18n.t("keys.remaining_permanent")
 
         exp_dt = datetime.fromisoformat(expires_at)
         if exp_dt.tzinfo is None:

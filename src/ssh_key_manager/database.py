@@ -129,7 +129,10 @@ def add_key(
     now = _now_iso()
     from datetime import timedelta
 
-    expires = (datetime.now(timezone.utc) + timedelta(hours=duration_hours)).isoformat()
+    if duration_hours == 0:
+        expires = "9999-12-31T23:59:59+00:00"
+    else:
+        expires = (datetime.now(timezone.utc) + timedelta(hours=duration_hours)).isoformat()
     cur = conn.execute(
         """INSERT INTO ssh_keys
            (server_id, key_name, public_key_path, private_key_path, duration_hours, created_at, expires_at)
@@ -142,7 +145,7 @@ def add_key(
 
 def list_keys(conn: sqlite3.Connection, include_revoked: bool = False) -> list[dict]:
     sql = """
-        SELECT k.*, s.name as server_name, s.host as server_host, s.username as server_username
+        SELECT k.*, s.name as server_name, s.host as server_host, s.username as server_username, s.port as server_port
         FROM ssh_keys k
         JOIN servers s ON k.server_id = s.id
     """
@@ -155,7 +158,7 @@ def list_keys(conn: sqlite3.Connection, include_revoked: bool = False) -> list[d
 
 def get_key(conn: sqlite3.Connection, key_id: int) -> dict | None:
     row = conn.execute(
-        """SELECT k.*, s.name as server_name, s.host as server_host, s.username as server_username
+        """SELECT k.*, s.name as server_name, s.host as server_host, s.username as server_username, s.port as server_port
            FROM ssh_keys k
            JOIN servers s ON k.server_id = s.id
            WHERE k.id = ?""",
@@ -182,7 +185,7 @@ def delete_key(conn: sqlite3.Connection, key_id: int) -> bool:
 def list_keys_by_server(conn: sqlite3.Connection, server_id: int) -> list[dict]:
     """List all non-revoked keys for a specific server."""
     rows = conn.execute(
-        """SELECT k.*, s.name as server_name, s.host as server_host, s.username as server_username
+        """SELECT k.*, s.name as server_name, s.host as server_host, s.username as server_username, s.port as server_port
            FROM ssh_keys k
            JOIN servers s ON k.server_id = s.id
            WHERE k.server_id = ? AND k.revoked_at IS NULL
@@ -195,7 +198,7 @@ def list_keys_by_server(conn: sqlite3.Connection, server_id: int) -> list[dict]:
 def get_expired_keys(conn: sqlite3.Connection) -> list[dict]:
     now = _now_iso()
     rows = conn.execute(
-        """SELECT k.*, s.name as server_name, s.host as server_host, s.username as server_username
+        """SELECT k.*, s.name as server_name, s.host as server_host, s.username as server_username, s.port as server_port
            FROM ssh_keys k
            JOIN servers s ON k.server_id = s.id
            WHERE k.expires_at <= ? AND k.revoked_at IS NULL""",

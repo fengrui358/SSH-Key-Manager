@@ -447,12 +447,20 @@ class App(tk.Tk):
         self._refresh_server_combo()
 
     def _refresh_duration_combo(self):
-        durations = []
+        labels = []
+        self._duration_hours = []
         for h in app_config.VALID_DURATIONS:
-            label = i18n.t("keys.hour", h=h) if h == 1 else i18n.t("keys.hours", h=h)
-            durations.append(label)
-        self._key_duration_combo["values"] = durations
-        if durations:
+            self._duration_hours.append(h)
+            if h == 0:
+                labels.append(i18n.t("keys.permanent"))
+            elif h < 24:
+                labels.append(i18n.t("keys.hours", h=h))
+            elif h % 24 == 0:
+                labels.append(i18n.t("keys.days", d=h // 24))
+            else:
+                labels.append(i18n.t("keys.hours", h=h))
+        self._key_duration_combo["values"] = labels
+        if labels:
             self._key_duration_combo.current(0)
 
     def _refresh_keys(self):
@@ -464,13 +472,22 @@ class App(tk.Tk):
 
         keys = database.list_keys(self._conn)
         for k in keys:
-            remaining = key_manager.format_remaining_time(k["expires_at"], lang=i18n.get_lang())
+            remaining = key_manager.format_remaining_time(k["expires_at"], lang=i18n.get_lang(), duration_hours=k["duration_hours"])
             expired = key_manager.is_key_expired(k)
             status = i18n.t("keys.status_expired") if expired else i18n.t("keys.status_active")
+            dur = k["duration_hours"]
+            if dur == 0:
+                dur_label = i18n.t("keys.permanent")
+            elif dur < 24:
+                dur_label = f"{dur}h"
+            elif dur % 24 == 0:
+                dur_label = f"{dur // 24}d"
+            else:
+                dur_label = f"{dur}h"
             self._keys_tree.insert("", tk.END, iid=str(k["id"]), values=(
                 k["key_name"],
                 f"{k['server_username']}@{k['server_host']}",
-                f"{k['duration_hours']}h",
+                dur_label,
                 remaining,
                 status,
             ))
@@ -542,8 +559,11 @@ class App(tk.Tk):
             messagebox.showwarning(i18n.t("dialog.warning"), i18n.t("msg.select_server"))
             return
 
-        dur_str = self._key_duration_var.get()
-        hours = int(dur_str.split()[0])
+        idx = self._key_duration_combo.current()
+        if idx < 0:
+            messagebox.showwarning(i18n.t("dialog.warning"), i18n.t("msg.select_server"))
+            return
+        hours = self._duration_hours[idx]
         label = self._key_label_var.get().strip()
 
         try:
@@ -669,7 +689,7 @@ class App(tk.Tk):
             return ssh_deploy.remove_public_key(
                 host=key["server_host"],
                 username=key["server_username"],
-                port=22,
+                port=server["port"] if server else 22,
                 public_key_path=key["public_key_path"],
                 **auth,
             )
@@ -878,7 +898,7 @@ class App(tk.Tk):
                     return ssh_deploy.remove_public_key(
                         host=k["server_host"],
                         username=k["server_username"],
-                        port=22,
+                        port=server["port"],
                         public_key_path=k["public_key_path"],
                         **auth,
                     )

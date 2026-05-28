@@ -12,7 +12,7 @@ CONFIG_FILE = "config.json"
 DB_FILE = "data.db"
 KEYS_DIR = "keys"
 
-VALID_DURATIONS = [1, 2, 4, 8, 24, 72]  # hours
+VALID_DURATIONS = [8, 24, 72, 168, 0]  # hours; 0 = permanent
 
 
 def get_app_dir() -> Path:

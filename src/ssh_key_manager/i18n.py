@@ -40,8 +40,11 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "keys.status_expired": "Expired",
         "keys.hour": "{h} hour",
         "keys.hours": "{h} hours",
+        "keys.days": "{d} days",
+        "keys.permanent": "Permanent",
         "keys.remaining": "{h}h {m}m remaining",
         "keys.remaining_min": "{m}m remaining",
+        "keys.remaining_permanent": "Permanent",
         # Servers page
         "servers.title": "Server Management",
         "servers.add": "Add Server",
@@ -161,8 +164,11 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "keys.status_expired": "已过期",
         "keys.hour": "{h} 小时",
         "keys.hours": "{h} 小时",
+        "keys.days": "{d} 天",
+        "keys.permanent": "长期",
         "keys.remaining": "剩余 {h}小时 {m}分钟",
         "keys.remaining_min": "剩余 {m}分钟",
+        "keys.remaining_permanent": "长期有效",
         # Servers page
         "servers.title": "服务器管理",
         "servers.add": "添加服务器",
