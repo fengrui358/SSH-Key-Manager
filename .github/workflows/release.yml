@@ -31,7 +31,7 @@ jobs:
         run: uv python install 3.12
 
       - name: Install dependencies
-        run: uv sync
+        run: uv sync --extra dev
 
       - name: Build with PyInstaller (macOS)
         if: matrix.target == 'macos'
@@ -47,9 +47,29 @@ jobs:
           # Ad-hoc sign the .app to reduce Gatekeeper friction
           codesign --sign - --force --deep dist/ssh-key-manager.app
 
-      - name: Build with PyInstaller (Windows)
+      - name: Build with Nuitka (Windows)
         if: matrix.target == 'windows'
-        run: uv run pyinstaller --onefile --windowed --name ssh-key-manager.exe --icon assets/icon.ico --add-data "assets/icon.png;assets" --hidden-import=paramiko --hidden-import=nacl --hidden-import=cryptography src/ssh_key_manager/__main__.py
+        uses: Nuitka/Nuitka-Action@main
+        with:
+          nuitka-version: main
+          script-name: src/ssh_key_manager/__main__.py
+          mode: onefile
+          enable-plugins: tk-inter
+          windows-icon-from-ico: assets/icon.ico
+          windows-console-mode: disable
+          include-data-files: |
+            assets/icon.png=assets/icon.png
+          output-dir: dist
+
+      - name: Rename Windows output
+        if: matrix.target == 'windows'
+        shell: bash
+        run: |
+          # Nuitka outputs <script-name>.exe in the output dir
+          if [ -f "dist/__main__.exe" ]; then
+            mv "dist/__main__.exe" "dist/ssh-key-manager.exe"
+          fi
+          ls -la dist/
 
       - name: Package macOS .dmg
         if: matrix.target == 'macos'
