@@ -57,6 +57,8 @@ def _migrate(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE servers ADD COLUMN auth_type TEXT NOT NULL DEFAULT 'password'")
     if "stored_key_path" not in cols:
         conn.execute("ALTER TABLE servers ADD COLUMN stored_key_path TEXT")
+    if "password" not in cols:
+        conn.execute("ALTER TABLE servers ADD COLUMN password TEXT")
 
 
 # --- Server operations ---
@@ -70,11 +72,12 @@ def add_server(
     username: str,
     auth_type: str = "password",
     stored_key_path: str | None = None,
+    password: str | None = None,
 ) -> int:
     now = _now_iso()
     cur = conn.execute(
-        "INSERT INTO servers (name, host, port, username, auth_type, stored_key_path, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        (name, host, port, username, auth_type, stored_key_path, now),
+        "INSERT INTO servers (name, host, port, username, auth_type, stored_key_path, password, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (name, host, port, username, auth_type, stored_key_path, password, now),
     )
     conn.commit()
     return cur.lastrowid  # type: ignore[return-value]
@@ -105,11 +108,12 @@ def update_server(
     username: str,
     auth_type: str = "password",
     stored_key_path: str | None = None,
+    password: str | None = None,
 ) -> bool:
     cur = conn.execute(
-        """UPDATE servers SET name=?, host=?, port=?, username=?, auth_type=?, stored_key_path=?
+        """UPDATE servers SET name=?, host=?, port=?, username=?, auth_type=?, stored_key_path=?, password=?
            WHERE id=?""",
-        (name, host, port, username, auth_type, stored_key_path, server_id),
+        (name, host, port, username, auth_type, stored_key_path, password, server_id),
     )
     conn.commit()
     return cur.rowcount > 0

@@ -549,7 +549,7 @@ class App(tk.Tk):
                 "key_passphrase": self._srv_key_pass_var.get() or None,
             }
         return {
-            "password": self._srv_pass_var.get() or self._key_password_var.get() or None,
+            "password": server.get("password") or self._srv_pass_var.get() or self._key_password_var.get() or None,
         }
 
     # --- Key actions ---
@@ -775,6 +775,9 @@ class App(tk.Tk):
 
             stored_key_path = database.store_key_path(self._data_dir, dest_path)
 
+        # Collect password for storage (only for password auth type)
+        srv_password = self._srv_pass_var.get().strip() or None if auth_type == "password" else None
+
         if self._editing_server_id:
             # Update existing server
             old_server = database.get_server(self._conn, self._editing_server_id)
@@ -787,13 +790,16 @@ class App(tk.Tk):
             # Keep existing key if auth type unchanged and no new key selected
             if auth_type == "key" and not stored_key_path and old_server and old_server.get("stored_key_path"):
                 stored_key_path = old_server["stored_key_path"]
+            # Keep existing password if not re-entered
+            if auth_type == "password" and not srv_password and old_server:
+                srv_password = old_server.get("password")
 
-            database.update_server(self._conn, self._editing_server_id, name, host, port, username, auth_type, stored_key_path)
+            database.update_server(self._conn, self._editing_server_id, name, host, port, username, auth_type, stored_key_path, srv_password)
             messagebox.showinfo(i18n.t("dialog.success"), i18n.t("msg.server_updated", name=name))
             self._cancel_edit_server()
         else:
             # Add new server
-            database.add_server(self._conn, name, host, port, username, auth_type, stored_key_path)
+            database.add_server(self._conn, name, host, port, username, auth_type, stored_key_path, srv_password)
             messagebox.showinfo(i18n.t("dialog.success"), i18n.t("msg.server_added", name=name))
 
         self._clear_server_form()
@@ -819,7 +825,7 @@ class App(tk.Tk):
         else:
             self._srv_key_path_var.set("")
 
-        self._srv_pass_var.set("")
+        self._srv_pass_var.set(server.get("password") or "")
         self._srv_key_pass_var.set("")
 
         # Switch button to "Update" mode
